@@ -14,74 +14,90 @@ Access the live demo here: [https://sentireddit.onrender.com](https://sentireddi
 ## FEATURES
 
 - Extract comments from any public Reddit post using PRAW
-- Preprocess text by removing links, Markdown, emojis, and filtering for English
-- Batch requests for efficient analysis of large numbers of comments
-- Sentiment Analysis service powered by DistilBERT fine-tuned on SST-2 dataset
-- Emotion Classification service using a DistilBERT-based emotion detection model
-- Dynamic pie chart for Negative, Neutral, and Positive sentiment breakdown
-- Bar chart showing relative proportions of emotions such as Anger, Fear, Joy, Sadness, and Surprise
-- Responsive frontend with HTML, CSS, and vanilla JavaScript
+- Preprocess text by removing links, markdown, emojis, and filtering out non-English content
+- Processes up to 500 comments at once for large-scale analysis
+- Sentiment analysis powered by RoBERTa model fine-tuned on Twitter data
+- Emotion classification using a DistilRoBERTa-based emotion detection model
+- Dynamic pie chart for Negative, Neutral, and Positive sentiment distribution
+- Bar chart showing relative proportions of emotions such as Anger, Fear, Joy, Sadness, Surprise, and more
+- Responsive frontend built with HTML, CSS, and vanilla JavaScript
 
 ## MACHINE LEARNING DETAILS
 
-- Sentiment API uses a Transformers pipeline for text classification with the DistilBERT-base-uncased-SST-2 model.
-- Raw probabilities are converted into three classes (Negative, Neutral, Positive) using threshold logic.
-- Emotion API uses a Transformers pipeline with the `bhadresh-savani/distilbert-base-uncased-emotion` model.
-- Both services handle batch requests of up to 50 texts per call for efficiency.
-- Preprocessing removes noise (links, Markdown), demojizes emojis, and filters non-English text using regex, `emoji`, and `langdetect`.
-- Chart generation uses Matplotlib to save figures as Base64-encoded PNGs, which are embedded directly in the frontend JSON response.
+- Sentiment analysis is performed using a Transformers pipeline with the `cardiffnlp/twitter-roberta-base-sentiment` model.
+- The model returns discrete sentiment labels (LABEL_0, LABEL_1, LABEL_2), which are aggregated to compute sentiment distribution.
+- Emotion classification is performed using the `j-hartmann/emotion-english-distilroberta-base` model via Transformers pipeline.
+- Comments are processed in bulk by passing the entire cleaned list to the respective Transformer pipelines.
+- Preprocessing removes noise (links, markdown), demojizes emojis, and filters non-English text using `regex`, `emoji`, and `langdetect`.
+- Chart generation uses Matplotlib to produce Base64-encoded PNGs, which are embedded directly in the frontend's JSON response.
 
 ## ARCHITECTURE OVERVIEW
 
-1. **Flask Frontend (app.py)**
-   - Renders the template and handles POST requests with the Reddit URL
-   - Uses PRAW to fetch up to 500 comments
-   - Applies preprocessing, filtering, and language detection
-   - Sends batches of comments to the two ML microservices
-   - Receives label distributions and returns Base64-encoded chart images in JSON
+1. **Flask Application (`app.py`)**
+   - Serves the HTML frontend and handles POST requests with the Reddit URL
+   - Uses `PRAW` to fetch up to 500 top-level Reddit comments
+   - Applies preprocessing: cleans markdown, removes links/emojis, filters out non-English text
+   - Loads sentiment and emotion Transformer pipelines (cached at startup for performance)
+   - Runs both models on the cleaned comments and computes label distributions
+   - Generates sentiment and emotion charts as Base64-encoded PNGs and returns them in a JSON response
 
-2. **Sentiment Microservice**
-   - Flask API wrapping a Transformers pipeline with DistilBERT-base-uncased fine-tuned on SST-2
-   - Maps raw scores into Negative, Neutral, or Positive categories
+2. **Machine Learning Integration**
+   - Sentiment analysis uses the `cardiffnlp/twitter-roberta-base-sentiment` model
+   - Emotion detection uses the `j-hartmann/emotion-english-distilroberta-base` model
+   - Both models are run directly within the main Flask app without microservice separation
 
-3. **Emotion Microservice**
-   - Flask API using the `bhadresh-savani/distilbert-base-uncased-emotion` model
-   - Produces probability scores for emotional classes and returns the top label per text
-
-4. **Frontend Static Files**
-   - `index.html` and `style.css` for layout and design
-   - Vanilla JavaScript to POST the Reddit URL and update chart images dynamically
+3. **Frontend Static Files**
+   - `index.html` provides the UI with a search box and chart display containers
+   - `style.css` styles the layout, charts, error messages, and loading spinner
+   - JavaScript logic in `index.html` handles user interaction, sends POST requests, and dynamically updates the charts
 
 ## SETUP AND INSTALLATION
 
-1. Clone the repository:
+1. **Clone the repository**
     ```bash
-    git clone https://github.com/yourusername/sentireddit.git
-    cd sentireddit
+    git clone https://github.com/Zoaib-Sir/Sentireddit.git
+    cd Sentireddit
     ```
 
-2. Create a virtual environment and install dependencies:
+2. **Create a virtual environment and install dependencies**
     ```bash
     python3 -m venv venv
-    source venv/bin/activate
+    source venv/bin/activate  # On Windows use `venv\Scripts\activate`
     pip install -r requirements.txt
     ```
 
-3. Configure environment variables:
-    - Create a `.env` file in the root folder with your Reddit credentials (`REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT`)
-    - Optionally set `SENTIMENT_API_URL` and `EMOTION_API_URL` if services are deployed remotely
+3. **Configure environment variables**
 
-4. Run the microservices and frontend:
-    - **Sentiment API**: `flask run` in the sentiment service folder (or set `FLASK_APP=sentiment_api.py`)
-    - **Emotion API**: `flask run` in the emotion service folder
-    - **Frontend**: `python app.py` in the main project folder
+    Create a `.env` file in the root folder with the following content:
+    ```env
+    REDDIT_CLIENT_ID=your_reddit_client_id
+    REDDIT_CLIENT_SECRET=your_reddit_client_secret
+    REDDIT_USER_AGENT=your_user_agent
+    FLASK_DEBUG=True
+    ```
 
-5. Open your browser at `http://localhost:5000` and enter a Reddit post URL.
+4. **Run the application**
+    ```bash
+    python app.py
+    ```
+
+5. **Access the application**
+
+    Open your browser and go to:
+    ```
+    http://localhost:5000
+    ```
+
+    Enter any valid Reddit post URL to analyze its comments.
+
 
 ## FUTURE IMPROVEMENTS
 
-- Add authentication and rate limiting for API endpoints
-- Support multiple languages with multilingual models
-- Implement real-time streaming updates to build charts live
-- Deploy microservices to cloud platforms with autoscaling
-- Enhance the frontend with modern frameworks and interactive visualizations
+- Add authentication and rate limiting to prevent abuse
+- Support multiple languages by integrating multilingual sentiment/emotion models
+- Improve error handling and display more detailed feedback to users
+- Deploy the application with autoscaling support using platforms like Render or Railway
+- Convert to a microservice-based architecture for better modularity and scalability
+- Enhance the frontend with modern frameworks (like React or Vue) and add interactive visualizations (e.g., Plotly, Chart.js)
+- Include additional analytics like toxicity detection or topic modeling
+- 
