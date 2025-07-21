@@ -15,19 +15,17 @@ import nltk
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
 
-# Model cache setup
 MODEL_CACHE = {
     'sentiment': None,
     'emotion': None
 }
 
 def load_models():
-    """Load and cache models during app initialization"""
+    """Loading and caching models during app initialization"""
     if not MODEL_CACHE['sentiment']:
         MODEL_CACHE['sentiment'] = pipeline(
             "sentiment-analysis", 
@@ -41,10 +39,8 @@ def load_models():
         )
     print("✅ Models loaded and cached")
 
-# Load models immediately when app starts
 load_models()
 
-# Initialize Reddit client
 reddit = praw.Reddit(
     client_id=os.getenv('REDDIT_CLIENT_ID'),
     client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
@@ -65,7 +61,6 @@ def preprocess_comments(comments):
     return cleaned
 
 def generate_charts(sentiment_data, emotion_data):
-    # Sentiment Pie Chart
     plt.figure(figsize=(6, 6))
     sentiment_labels = ['Negative', 'Neutral', 'Positive']
     sentiment_values = [sentiment_data.get('LABEL_0', 0), 
@@ -80,7 +75,6 @@ def generate_charts(sentiment_data, emotion_data):
     img1.seek(0)
     sentiment_url = base64.b64encode(img1.getvalue()).decode('utf-8')
 
-    # Emotion Bar Chart
     plt.figure(figsize=(8, 4))
     emotions = sorted(emotion_data.items(), key=lambda x: x[1], reverse=True)
     plt.bar([e[0].title() for e in emotions], [e[1] for e in emotions], color='#6c5ce7')
@@ -100,7 +94,6 @@ def index():
     if request.method == 'POST':
         post_url = request.form.get('url', '').strip()
         
-        # Validate URL format
         if not post_url.startswith(('https://www.reddit.com/', 'https://reddit.com/')):
             return jsonify({'error': 'Invalid Reddit URL format. Example: https://www.reddit.com/r/subreddit/comments/...'})
             
@@ -129,7 +122,7 @@ def index():
             emotions = [res['label'] for res in emotion_results]
             emotion_dist = pd.Series(emotions).value_counts(normalize=True).to_dict()
             
-            # Generate charts
+            # Generating charts 
             sentiment_img, emotion_img = generate_charts(sentiment_dist, emotion_dist)
             
             return jsonify({
