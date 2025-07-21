@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentireddit - Reddit Sentiment Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Sentireddit</h1>
+        <p class="subtitle">Analyze Sentiment and Emotions in Reddit Comments</p>
+        
+        <div class="search-box">
+            <input type="text" id="reddit-url" placeholder="Enter Reddit Post URL">
+            <button onclick="analyzePost()">Analyze</button>
+        </div>
+        
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Analyzing comments...</p>
+        </div>
+
+        <div id="error" class="error"></div>
+        
+        <div id="results" class="results">
+            <div class="charts">
+                <div class="chart-container">
+                    <h2>Sentiment Distribution</h2>
+                    <img id="sentiment-chart" class="chart">
+                </div>
+                
+                <div class="chart-container">
+                    <h2>Emotional Tone</h2>
+                    <img id="emotion-chart" class="chart">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function analyzePost() {
+            const url = document.getElementById('reddit-url').value;
+            const loading = document.getElementById('loading');
+            const results = document.getElementById('results');
+            const errorDiv = document.getElementById('error');
+
+            // Reset UI
+            errorDiv.style.display = 'none';
+            results.style.display = 'none';
+            loading.style.display = 'flex';
+
+            if (!url) {
+                showError('Please enter a Reddit URL');
+                loading.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch('/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `url=${encodeURIComponent(url)}`
+                });
+
+                if (!response.ok) throw new Error('Server error');
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
+                // Update charts
+                document.getElementById('sentiment-chart').src = `data:image/png;base64,${data.sentiment_chart}`;
+                document.getElementById('emotion-chart').src = `data:image/png;base64,${data.emotion_chart}`;
+                
+                results.style.display = 'block';
+            } catch (error) {
+                showError(error.message || 'An unexpected error occurred');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
