@@ -100,4 +100,3 @@ Access the live demo here: [https://sentireddit.onrender.com](https://sentireddi
 - Convert to a microservice-based architecture for better modularity and scalability
 - Enhance the frontend with modern frameworks (like React or Vue) and add interactive visualizations (e.g., Plotly, Chart.js)
 - Include additional analytics like toxicity detection or topic modeling
-- 
